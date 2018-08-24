@@ -1,2 +1,2 @@
 # WHrkTLQKF
-저는 정말 알고리즘이 싫고요... 싫습니다 그냥...
+Whatever, I really really pray for your fucking life reading these.
