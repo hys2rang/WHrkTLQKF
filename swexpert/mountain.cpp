@@ -50,6 +50,7 @@ int main()
 						DFS(max_pos[p].first, max_pos[p].second,1);
 						clear_visited(N);
 					}
+					map[i][j] +=depth;
 				}
 			}
 		}
