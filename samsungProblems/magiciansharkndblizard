@@ -1,0 +1,237 @@
+#pragma warning(disable:4996)
+#include <iostream>
+#include <vector>
+#include <list>
+#include <algorithm>
+
+#define MAX 50
+using namespace std;
+
+int N, M;
+int initmap[MAX][MAX];
+vector<pair<int, int>> magicinfo;//direction, distance
+list<int> maptolist,changedlist;
+int dirs[5][2] = { {0,0},{-1,0},{1,0},{0,-1},{0,1} }; //(y,x) 
+int exploderesult[4] = { 0 };
+void Blizard(int dir, int dist);
+void Destroy(int dir, int dist);
+void Explode();
+void Change();
+void MaptoList();
+void ListToMap();
+bool isExplodeAble();
+
+list<int>::iterator Search(list<int>::iterator start);
+
+int main()
+{
+	auto file = freopen("test.txt", "r", stdin);
+
+	for (int y = 0; y < MAX; y++)
+	{
+		for (int x = 0; x < MAX; x++)
+		{
+			initmap[y][x] = -1;
+		}
+	}
+
+	cin >> N >> M;
+
+	magicinfo.resize(M);
+	for (int y = 1; y <= N; y++)
+	{
+		for (int x = 1; x <= N; x++)
+		{
+			cin >> initmap[y][x];
+		}
+	}
+
+	for (int i = 0; i < M; i++)
+	{
+		cin >> magicinfo[i].first >> magicinfo[i].second;
+	}
+
+	for (int i = 0; i < M; i++)
+	{
+		Blizard(magicinfo[i].first, magicinfo[i].second);
+	}
+
+	int result = 0;
+	for (int i = 0; i < 4; i++)
+	{
+		result += i * exploderesult[i];
+	}
+
+	cout << result;
+	return 0;
+}
+
+void Blizard(int dir, int dist)
+{
+	Destroy(dir, dist);
+	MaptoList();
+	Explode();
+	Change();
+	ListToMap();
+}
+void Destroy(int dir, int dist)
+{
+	int startx = (N + 1) / 2;
+	int starty = (N + 1) / 2;
+
+	for (int i = 0; i < dist; i++)
+	{
+		starty += dirs[dir][0];
+		startx += dirs[dir][1];
+		initmap[starty][startx] = 0;
+	}
+}
+void Explode()
+{
+	while (isExplodeAble())
+	{
+		auto it = maptolist.begin();
+		while (it != maptolist.end())
+		{
+			it = Search(it);
+		}
+	}	
+}
+bool isExplodeAble()
+{
+	int cnt = 1;
+	auto it = maptolist.begin();
+
+	for (; it != maptolist.end(); ++it)
+	{
+		bool bb = (next(it) == maptolist.end());
+
+		if (bb || (*it != *next(it)))
+		{
+			if (cnt >= 4)
+				return true;
+			else
+				cnt = 0;
+		}
+		cnt++;
+	}
+	return false;
+}
+list<int>::iterator Search(list<int>::iterator start)
+{
+	if (start == maptolist.end())
+		return start;
+
+	int cur = *start;
+
+	auto it = start;
+	int cnt = 1;
+	while (it!=maptolist.end())
+	{
+		bool bb = (next(it) == maptolist.end());
+		if (bb || (cur != *next(it)) )//다음꺼랑 다를때
+		{
+			auto returnvalue = next(it);
+			if (cnt >= 4)
+			{
+				maptolist.erase(start, ++it);
+				exploderesult[cur] += cnt;
+			}
+			return returnvalue;
+		}
+		cnt++;
+		it++;
+	}
+	return maptolist.end();
+}
+void Change()
+{
+	changedlist.clear();
+	auto it = maptolist.begin();
+
+	int cnt = 1;
+	for (; it != maptolist.end(); ++it)
+	{
+		bool bb = (next(it) == maptolist.end());
+		if (bb || *it != *next(it)) 
+		{
+			changedlist.push_back(cnt);
+			changedlist.push_back(*it);
+			cnt = 0;
+		}
+		cnt++;
+	}
+}
+void MaptoList()
+{
+	maptolist.clear();
+	int cnt = (N - 1) / 2;
+	for (int i = 1; i <= cnt; i++)
+	{
+		for (int x = i; x <= N - (i - 1); x++)
+		{
+			if (initmap[i][x] == 0)
+				continue;
+
+			maptolist.push_front(initmap[i][x]);
+		}
+		for (int y = i + 1; y <= N - (i - 1); y++)
+		{
+			if (initmap[y][N - (i - 1)] == 0)
+				continue;
+			maptolist.push_front(initmap[y][N - (i - 1)]);
+		}
+		for (int x = N - i; x >= i; x--)
+		{
+			if (initmap[N - (i - 1)][x] == 0)
+				continue;
+			maptolist.push_front(initmap[N - (i - 1)][x]);
+		}
+		for (int y = N - i; y >= i + 1; y--)
+		{
+			if (initmap[y][i] == 0)
+				continue;
+			maptolist.push_front(initmap[y][i]);
+		}
+	}
+}
+void ListToMap()
+{
+	for (int y = 1; y <= N; y++)
+	{
+		for (int x = 1; x <= N; x++)
+		{
+			initmap[y][x] = 0;
+		}
+	}
+	int cnt = (N - 1) / 2;
+	auto it = changedlist.begin();
+	for (int i = 1; i <= cnt; i++)
+	{
+		for (int y = (N + 1) / 2 - (i - 1); y <= (N + 1) / 2 + i; y++)
+		{
+			if (it == changedlist.end())
+				return;
+			initmap[y][(N + 1) / 2 - i] = *it++;
+		}
+		for (int x = (N + 1) / 2 - (i - 1); x <= (N + 1) / 2 + i; x++)
+		{
+			if (it == changedlist.end())
+				return;
+			initmap[(N + 1) / 2 + i][x] = *it++;
+		}
+		for (int y = (N + 1) / 2 + (i - 1); y >= (N + 1) / 2 - i; y--)
+		{
+			if (it == changedlist.end())
+				return;
+			initmap[y][(N + 1) / 2 + i] = *it++;
+		}
+		for (int x = (N + 1) / 2 + (i - 1); x >= (N + 1) / 2 - i; x--)
+		{
+			if (it == changedlist.end())
+				return;
+			initmap[(N + 1) / 2 - i][x] = *it++;
+		}
+	}
+
+}
